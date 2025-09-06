@@ -184,10 +184,7 @@ def ask_question(context: str, question: str, model_name: str = "mistralai/Mistr
         return f"Error: {str(e)}"
 
 def ask_arxiv_question(metadata: dict, question: str, model_key: Optional[str] = None, mode: str = "short") -> str:
-    """
-    בונה קונטקסט מסיכום המטא־דאטה של מאמר arXiv וקורא ל-ask_question.
-    שומר על החתימה שלך: הפרמטר model_key הוא שם המודל שיוזן ל-ask_question.
-    """
+
     title = (metadata or {}).get("title", "")
     abstract = (metadata or {}).get("abstract", "")
     authors = (metadata or {}).get("authors", "")
