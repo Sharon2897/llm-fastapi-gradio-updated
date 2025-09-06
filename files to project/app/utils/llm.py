@@ -11,7 +11,7 @@ import threading
 if os.path.exists(".env"):
     load_dotenv()
 
-HF_TOKEN = os.getenv("HF_TOKEN", None)  # מומלץ להתחבר עם huggingface_hub.login במקום להעביר token בפרמטרים
+HF_TOKEN = os.getenv("HF_TOKEN", None) 
 CPU_FALLBACK_MODEL = os.getenv("CPU_FALLBACK_MODEL", "microsoft/Phi-3-mini-4k-instruct")
 ALLOW_HEAVY_ON_CPU = os.getenv("ALLOW_HEAVY_ON_CPU", "0") in {"1", "true", "True", "YES", "yes"}
 
@@ -40,7 +40,7 @@ _META_MARKERS = (
     "accelerate/hooks.py",
     "set_module_tensor_to_device",
     "device_map",
-    "tensor.item() cannot be called on meta tensors",  # ← חשוב: נתמך
+    "tensor.item() cannot be called on meta tensors",  
 )
 def _looks_like_meta_cpu_error(exc: Exception) -> bool:
     msg = f"{exc}".lower()
@@ -54,7 +54,7 @@ _GEN_LOCKS = {}          # requested_model -> threading.Lock
 _GEN_LOCKS_GLOBAL = threading.Lock()
 
 def _get_lock(key: str) -> threading.Lock:
-    # יצירת Lock פר-מודל, בבטיחות מתחרים
+
     with _GEN_LOCKS_GLOBAL:
         if key not in _GEN_LOCKS:
             _GEN_LOCKS[key] = threading.Lock()
@@ -77,18 +77,18 @@ def _build_generator_unlocked(requested_model: str):
     kwargs = {}
 
     if _has_cuda():
-        # GPU — מותר device_map="auto"
+  
         kwargs.update({
             "device_map": "auto",
             "torch_dtype": torch.float16,
             "low_cpu_mem_usage": True,
         })
     else:
-        # CPU — לא device_map, לא low_cpu_mem_usage, רק device=-1
+
         if (requested_model in _HEAVY_7B) and not ALLOW_HEAVY_ON_CPU:
             use_model = CPU_FALLBACK_MODEL
         kwargs.update({
-            "device": -1,  # CPU
+            "device": -1,  
         })
 
     gen = pipeline(
@@ -114,11 +114,11 @@ def _build_generator(requested_model: str):
     if requested_model in _GEN_CACHE:
         return _GEN_CACHE[requested_model]
     with lock:
-        # ייתכן שת’רד אחר כבר בנה בזמן שחיכינו
+
         if requested_model in _GEN_CACHE:
             return _GEN_CACHE[requested_model]
         gen = _build_generator_unlocked(requested_model)
-        _GEN_CACHE[requested_model] = gen  # קשירה לפי מה שהתבקש (גם אם היה פולבאק בפועל)
+        _GEN_CACHE[requested_model] = gen  
         return gen
 
 def _safe_get_generator(requested_model: str):
@@ -163,7 +163,7 @@ def ask_question(context: str, question: str, model_name: str = "mistralai/Mistr
         text = result[0].get("generated_text", "")
         return text.split("Answer:", 1)[-1].strip() if "Answer:" in text else text.strip()
     except Exception as e:
-        # מגן אחרון: אם זו שגיאת meta/CPU — ננקה cache וננסה פעם אחת את מודל הפולבאק
+
         if (not _has_cuda()) and _looks_like_meta_cpu_error(e) and model_name != CPU_FALLBACK_MODEL:
             try:
                 _GEN_CACHE.pop(model_name, None)
